@@ -1,4 +1,4 @@
-Name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . ']
+name: CI - Build macOS Name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . '] Windows
 
 Jobs: build-macos: Läuft auf: macos-latest Schritte: - Name: Auschecken verwendet: actions/checkout@v4 - Name: Qt installieren verwendet: jurplel/install-qt-action@v2 mit: Version: '6.10.2' Host: mac Architektur: 'arm64' Module: qtbase qttools - Name: Konfigurieren & Erstellen Ausführen: | mkdir -p build && cd build cmake .. -DCMAKE_BUILD_TYPE=Release cmake --build . --config Release --parallel - Name: macdeployqt und DMG erstellen Ausführen: | APP=$(find build -name "*.app" -maxdepth 3 | head -n1) if [ -z "$APP" ]; then echo "Keine .app gefunden"; exit 1; fi /Users/runner/Qt/6.10.2/macos/bin/macdeployqt "$APP" -dmg ls -la
 
