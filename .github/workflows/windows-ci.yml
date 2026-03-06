@@ -1,7 +1,3 @@
-Name: Build Windows (MinGW) - Ledeu-Programm on: workflow_dispatch: push: tags: ['v*. . ']
-
-Jobs: Build-Windows: Läuft auf: Windows-Neueste Schritte: - Name: Checkout verwendet: Aktionen/Checkout@v4
-
   - name: install qt
     uses: jurplel/install-qt-action@v2
     with:
@@ -44,3 +40,4 @@ Jobs: Build-Windows: Läuft auf: Windows-Neueste Schritte: - Name: Checkout verw
     with:
       name: Ledeu-Programm-windows
       path: build/Ledeu-Programm-windows.zip
+
