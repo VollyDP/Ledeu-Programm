@@ -1,6 +1,6 @@
-Name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . ']
+name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . ']
 
-Jobs: build-macos: Läuft auf: macos-latest Schritte: - Name: Checkout verwendet: actions/checkout@v4  - name: install qt
+jobs: build-macos: Läuft auf: macos-latest Schritte: - Name: Checkout verwendet: actions/checkout@v4  - name: install qt
     uses: jurplel/install-qt-action@v2
     with:
       version: '6.10.2'
