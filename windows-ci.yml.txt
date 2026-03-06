@@ -1,0 +1,46 @@
+Name: Build Windows (MinGW) - Ledeu-Programm on: workflow_dispatch: push: tags: ['v*. . ']
+
+Jobs: Build-Windows: Läuft auf: Windows-Neueste Schritte: - Name: Checkout verwendet: Aktionen/Checkout@v4
+
+  - name: install qt
+    uses: jurplel/install-qt-action@v2
+    with:
+      version: '6.10.2'
+      host: windows
+      arch: '64'
+      modules: qtbase qttools
+
+  - name: setup msys2
+    uses: msys2/setup-msys2@v2
+    with:
+      msystem: MINGW64
+      update: true
+
+  - name: install mingw toolchain
+    shell: msys2 {0}
+    run: |
+      pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+
+  - name: configure & build
+    shell: msys2 {0}
+    run: |
+      mkdir -p build
+      cd build
+      cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+      cmake --build . --config Release --parallel
+
+  - name: run windeployqt and create zip
+    env:
+      QTDIR: ${{ env.QT_INSTALL_DIR }}
+    run: |
+      cd build || exit 1
+      if [ -d Release ]; then cd Release; fi
+      for %%f in (*.exe) do set EXE=%%f
+      "%QTDIR%\\bin\\windeployqt.exe" "%EXE%"
+      powershell -Command "Compress-Archive -Path * -DestinationPath ../Ledeu-Programm-windows.zip"
+
+  - name: upload artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: Ledeu-Programm-windows
+      path: build/Ledeu-Programm-windows.zip
