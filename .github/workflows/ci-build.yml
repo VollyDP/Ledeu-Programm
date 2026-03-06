@@ -1,5 +1,73 @@
-name: CI - Build macOS Name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . '] Windows
+Name: CI - macOS & Windows erstellen auf: workflow_dispatch: push: Tags: ['v*. . ']
 
-Jobs: build-macos: Läuft auf: macos-latest Schritte: - Name: Auschecken verwendet: actions/checkout@v4 - Name: Qt installieren verwendet: jurplel/install-qt-action@v2 mit: Version: '6.10.2' Host: mac Architektur: 'arm64' Module: qtbase qttools - Name: Konfigurieren & Erstellen Ausführen: | mkdir -p build && cd build cmake .. -DCMAKE_BUILD_TYPE=Release cmake --build . --config Release --parallel - Name: macdeployqt und DMG erstellen Ausführen: | APP=$(find build -name "*.app" -maxdepth 3 | head -n1) if [ -z "$APP" ]; then echo "Keine .app gefunden"; exit 1; fi /Users/runner/Qt/6.10.2/macos/bin/macdeployqt "$APP" -dmg ls -la
+Jobs: build-macos: Läuft auf: macos-latest Schritte: - Name: Checkout verwendet: actions/checkout@v4  - name: install qt
+    uses: jurplel/install-qt-action@v2
+    with:
+      version: '6.10.2'
+      host: mac
+      modules: qtbase qttools
 
-  build-windows: runs-on: windows-latest steps: - name: Checkout uses: actions/checkout@v4 - name: Install Qt (MinGW) uses: jurplel/install-qt-action@v2 with: version: '6.10.2' host: windows arch: '64' modules: qtbase qttools - name: Setup MSYS2 uses: msys2/setup-msys2@v2 with: msystem: MINGW64 update: true - name: Install mingw shell: msys2 {0} run: | pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake - name: Configure & build shell: msys2 {0} run: | mkdir -p build && cd build cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release cmake --build . --config Release --parallel - name: Run windeployqt and create ZIP env: QTDIR: ${{ env.QT_INSTALL_DIR }} run: | cd build || exit 1 if [ -d Release ]; then cd Release; fi for %%f in (*.exe) do set EXE=%%f "%QTDIR%\bin\windeployqt.exe" "%EXE%" powershell -Command "Compress-Archive -Path * -DestinationPath ../Ledeu-Programm-windows.zip" - name: Upload windows artifact uses: actions/upload-artifact@v4 with: name: Ledeu-Programm-windows path: build/Ledeu-Programm-windows.zip
+  - name: configure and build
+    run: |
+      mkdir -p build
+      cd build
+      cmake .. -DCMAKE_BUILD_TYPE=Release
+      cmake --build . --config Release --parallel
+
+  - name: macdeployqt and create dmg
+    run: |
+      APP=$(find build -name "*.app" -maxdepth 3 | head -n1)
+      if [ -z "$APP" ]; then echo "No .app found"; exit 1; fi
+      /Users/runner/Qt/6.10.2/macos/bin/macdeployqt "$APP" -dmg
+      ls -la
+
+  - name: upload mac artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: ledeu-programm-macos
+      path: |
+        **/*.dmg
+        **/*.app
+build-windows: runs-on: windows-latest steps: - name: checkout uses: actions/checkout@v4  - name: install qt (mingw)
+    uses: jurplel/install-qt-action@v2
+    with:
+      version: '6.10.2'
+      host: windows
+      arch: '64'
+      modules: qtbase qttools
+
+  - name: setup msys2
+    uses: msys2/setup-msys2@v2
+    with:
+      msystem: MINGW64
+      update: true
+
+  - name: install mingw toolchain
+    shell: msys2 {0}
+    run: |
+      pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+
+  - name: configure and build (windows)
+    shell: msys2 {0}
+    run: |
+      mkdir -p build
+      cd build
+      cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+      cmake --build . --config Release --parallel
+
+  - name: run windeployqt and create zip
+    env:
+      QTDIR: ${{ env.QT_INSTALL_DIR }}
+    run: |
+      cd build || exit 1
+      if [ -d Release ]; then cd Release; fi
+      for %%f in (*.exe) do set EXE=%%f
+      "%QTDIR%\\bin\\windeployqt.exe" "%EXE%"
+      powershell -Command "Compress-Archive -Path * -DestinationPath ../Ledeu-Programm-windows.zip"
+
+  - name: upload windows artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: ledeu-programm-windows
+      path: build/Ledeu-Programm-windows.zip
+
