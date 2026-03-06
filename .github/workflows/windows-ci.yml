@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: install qt
-        uses: actions/setup-qt@v4
+        uses: miurahr/setup-qt-action@v4
         with:
           version: '6.6.*'
           host: windows
